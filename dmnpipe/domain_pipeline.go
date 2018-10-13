@@ -30,7 +30,8 @@ type datastore struct {
 }
 
 func open() (*datastore, error) {
-	db, err := sql.Open("mysql", "root:@tcp(192.168.1.2)/namex?parseTime=true")
+	// db, err := sql.Open("mysql", "root:@tcp(192.168.1.2)/namex?parseTime=true")
+	db, err := sql.Open("mysql", "namex:ZbJSDz5cSwHY62Ts@tcp(127.0.0.1)/namex?parseTime=true")
 
 	if err != nil {
 		log.Panic(err)
@@ -69,7 +70,8 @@ func exampleScrape(domainName DomainName) (domainInfo DomainInfo) {
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		log.Printf("status code error: %d %s", res.StatusCode, res.Status)
+		return
 	}
 
 	// Load the HTML document
@@ -176,6 +178,7 @@ func (db *datastore) insertKeywords(domainInfo DomainInfo) {
 	if len(vals) > 0 {
 		sqlStr = sqlStr[0 : len(sqlStr)-1]
 		stmt, _ := db.Prepare(sqlStr)
+		defer stmt.Close()
 
 		_, err := stmt.Exec(vals...)
 		failOnError(err, "Error in keyword insert query")
@@ -208,6 +211,7 @@ func (db *datastore) updateDomain(d DomainInfo) {
 	var stmt *(sql.Stmt)
 	stmt, err := db.Prepare("UPDATE domains SET title = ?, description = ?, og_title = ?, og_description = ?, expiry_date = ? WHERE id = ?")
 	failOnError(err, "There was an error in update prepare query")
+	defer stmt.Close()
 
 	_, err = stmt.Exec(d.Title, d.Description, d.OgTitle, d.OgDescription, d.ExpiryDate, d.DomainId)
 	failOnError(err, "Error in update query execution")
@@ -215,7 +219,7 @@ func (db *datastore) updateDomain(d DomainInfo) {
 
 func (db *datastore) consumer(domainInfo <-chan DomainInfo) {
 	for d := range domainInfo {
-		fmt.Println(d.Domain)
+		fmt.Println(d.DomainId)
 		db.insertKeywords(d)
 		db.updateDomain(d)
 	}
@@ -227,7 +231,7 @@ func main() {
 
 	domain := make(chan DomainName)
 	domainInfo := make(chan DomainInfo)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 150; i++ {
 		go func() {
 			go processor(domain, domainInfo)
 		}()
