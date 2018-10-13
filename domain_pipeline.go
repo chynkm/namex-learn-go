@@ -76,31 +76,26 @@ func exampleScrape(domainName DomainName) (domainInfo DomainInfo) {
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	failOnError(err, "HTML document loading failure")
 
-	// fmt.Printf("title field: %s\n", doc.Find("title").First().Text())
 	domainInfo.Title = doc.Find("title").First().Text()
 
 	doc.Find("meta").Each(func(i int, s *goquery.Selection) {
 		if name, _ := s.Attr("name"); strings.EqualFold(name, "description") {
 			description, _ := s.Attr("content")
-			// fmt.Printf("Description field: %s\n", description)
 			domainInfo.Description = description
 		}
 
 		if name, _ := s.Attr("name"); strings.EqualFold(name, "keywords") {
 			keywords, _ := s.Attr("content")
-			// fmt.Printf("keyword field: %s\n", keywords)
 			domainInfo.Keywords = keywords
 		}
 
 		if name, _ := s.Attr("property"); strings.EqualFold(name, "og:title") {
 			ogTitle, _ := s.Attr("content")
-			// fmt.Printf("og title field: %s\n", ogTitle)
 			domainInfo.OgTitle = ogTitle
 		}
 
 		if name, _ := s.Attr("property"); strings.EqualFold(name, "og:description") {
 			ogDescription, _ := s.Attr("content")
-			// fmt.Printf("og description field: %s\n", ogDescription)
 			domainInfo.OgDescription = ogDescription
 		}
 	})
@@ -227,8 +222,6 @@ func (db *datastore) consumer(domainInfo <-chan DomainInfo) {
 }
 
 func main() {
-	// d := DomainName{1, "imdb.com/title/tt0493405"}
-	// exampleScrape(d)
 	db, _ := open()
 	loop := make(chan bool)
 
